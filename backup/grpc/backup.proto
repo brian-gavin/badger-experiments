@@ -1,0 +1,12 @@
+syntax = "proto3";
+option go_package = "/pb";
+
+message BackupRequest {
+    bytes EncodedKVs = 1;
+}
+
+message BackupResponse {}
+
+service BackupService {
+    rpc Backup(stream BackupRequest) returns (BackupResponse);
+}

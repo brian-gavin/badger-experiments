@@ -1,7 +1,6 @@
-package main
+package dump
 
 import (
-	"badger-experiments/backup"
 	"context"
 	"fmt"
 	"os"
@@ -22,19 +21,21 @@ func dump(db *badger.DB) error {
 	return s.Orchestrate(context.Background())
 }
 
-func main() {
-	leader, err := badger.Open(badger.DefaultOptions(backup.LeaderRoot).WithReadOnly(true))
+func Run(leaderRoot, followerRoot string) error {
+	leader, err := badger.Open(badger.DefaultOptions(leaderRoot).WithReadOnly(true))
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer leader.Close()
-	follower, err := badger.Open(badger.DefaultOptions(backup.FollowerRoot).WithReadOnly(true))
+	follower, err := badger.Open(badger.DefaultOptions(followerRoot).WithReadOnly(true))
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer follower.Close()
-	fmt.Println("LEADER:")
-	dump(leader)
-	fmt.Println("FOLLOWER:")
-	dump(follower)
+	fmt.Printf("LEADER at %s:\n", leaderRoot)
+	if err := dump(leader); err != nil {
+		return err
+	}
+	fmt.Printf("FOLLOWER at %s:\n", followerRoot)
+	return dump(follower)
 }

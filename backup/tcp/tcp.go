@@ -1,4 +1,4 @@
-package backup
+package tcp
 
 import (
 	"encoding/json"
@@ -14,11 +14,17 @@ import (
 )
 
 const (
-	LeaderRoot   = "/tmp/backup/leader"
-	FollowerRoot = "/tmp/backup/follower"
+	LeaderRoot   = "/tmp/backup/leader-tcp"
+	FollowerRoot = "/tmp/backup/follower-tcp"
 )
 
 func Run() (err error) {
+	if err = os.MkdirAll(LeaderRoot, 0o755); err != nil {
+		return
+	}
+	if err = os.MkdirAll(FollowerRoot, 0o755); err != nil {
+		return
+	}
 	stops := []chan bool{make(chan bool), make(chan bool)}
 	go func() {
 		c := make(chan os.Signal, 1)
@@ -50,7 +56,7 @@ func leaderHTTP() <-chan *http.Request {
 }
 
 func leaderShipLog(leader *badger.DB, lastBackup uint64) (uint64, error) {
-	fconn, err := net.Dial("tcp", "127.0.0.1:8484")
+	fconn, err := net.Dial("tcp", "localhost:8484")
 	if err != nil {
 		return 0, err
 	}
@@ -108,7 +114,7 @@ func followerGoAcceptLoop(l net.Listener) <-chan net.Conn {
 }
 
 func follower(stop <-chan bool, listening chan<- bool) {
-	l, err := net.Listen("tcp", "127.0.0.1:8484")
+	l, err := net.Listen("tcp", "localhost:8484")
 	if err != nil {
 		panic(err)
 	}
